@@ -1,0 +1,28 @@
+Controlling the robot:
+The left joystick controls orthogonal movement or (strafing) of the robot
+The right joystick controls turning of the robot, and both stick can be used together for complex movements
+
+There are 2 movement modes, namely robot centric and field centric:
+- Robot centric is when the controls work relative to where the robot is facing, e.g. if the robot was facing to the right, pushing the left joystick forward would move the robot to the right
+- Field centric is when the controls move the robot relative to the field its on, e.g. if the default orientation was in front of the controller looking up the field and the robot was facing to the right, moving the joystick forward would make the robot move forward up the field, as if it was moving to the left in robot centric mode
+
+In robot centric mode it is generally harder to control the robot when it is facing any direction other than forward.
+In field centric mode there must be a default 'forward' orientation that the robot can use to base its movement on. You orient the robot in the right direction and press 'a' to set a new default orientation for the robot's field centric mode.
+
+For the arm, we use the left and right triggers and bumpers. The left and right triggers control the movement of the main arm (up and down respectively), and the left and right bumpers control the movement of the hand of the arm (again up and down respectively).
+Holding any one of these down will move that part
+
+Pressing the options button toggles you between settings mode and driving mode, both modes cannot coincide. In settings you'll be presented with a list of options. One is to toggle the movement mode (between robot centric and field centric vice versa) by pressing square on the controller.
+Another is to set a new default orientation of the robot for field centric mode by pressing cross.
+Pressing the options button again brings you back to driving mode.
+
+Need some way to launch the drone - really don't want to accidentally launch the drone so make the controls difficult. Pressing down the joysticks can happen too often
+
+
+One way to launch the drone could be to hold down cross and the dpad up buttons simultaneously
+
+
+
+
+
+
