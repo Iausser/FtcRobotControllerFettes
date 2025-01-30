@@ -8,13 +8,11 @@ public class SettingsManager {
     public Gamepad gamepad;
     public Telemetry telemetry;
     public RobotMove robotMove;
-    public RobotExtras robotExtras;
     public Button settingsButton;
 
-    public SettingsManager(Gamepad gamepad, RobotMove robotMove, RobotExtras robotExtras, Telemetry telemetry) {
+    public SettingsManager(Gamepad gamepad, RobotMove robotMove, Telemetry telemetry) {
         this.gamepad = gamepad;
         this.robotMove = robotMove;
-        this.robotExtras = robotExtras;
         this.telemetry = telemetry;
         controllerInput = new ControllerInputHandler(gamepad);
 

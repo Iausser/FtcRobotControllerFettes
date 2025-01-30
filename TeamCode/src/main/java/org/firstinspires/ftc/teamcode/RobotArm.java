@@ -5,103 +5,109 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
-
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 
 public class RobotArm {
-    public DcMotor motorArmLeft, motorArmRight;
-    public Servo servoArm, servoHand;
-    private Gamepad gamepad;
-    private ControllerInputHandler controllerInput;
-    private static final double MOTOR_ARM_POWER = 0.26;
-    private static final double SERVO_ARM_ANGLE_INCREMENT = 0.025;
-    public static final double SERVO_HAND_CLOSED = 0.0;
-    public static final double SERVO_HAND_OPEN = 0.056;
-    public static final double SERVO_ARM_DOWN = 1.00;//0.55 ;
-    public static final double SERVO_ARM_UP = 1.125;
-    public static final double SERVO_ARM_BOARD = 0.475;
-    public static final int MOTOR_ARM_DOWN = -8;
-    public static final int MOTOR_ARM_UP = 96;
-    public static final int MOTOR_ARM_BOARD = 118;
-    private Telemetry telemetry;
-    public Button handToggleButton, motorArmUpButton, motorArmDownButton, servoArmUpButton, servoArmDownButton, armDownButton, armUpButton, armBoardButton;
-    public double handAngle, servoArmAngle;
 
+    // Hardware components
+    private DcMotor motorArm;
+    private DcMotor motorJoint;
+    private Servo servoHand;
+
+    // Gamepad and controller handler
+    private final Gamepad gamepad;
+    private final ControllerInputHandler controllerInput;
+
+    // Constants for motor power and servo positions
+    private static final double MOTOR_ARM_SCALING = 0.7;
+    private static final double SERVO_HAND_CLOSED = 0.0;
+    private static final double SERVO_HAND_OPEN = 0.5;
+    private static final double JOINT_POWER = 0.5;
+
+    // Telemetry for runtime feedback
+    private final Telemetry telemetry;
+
+    // Buttons for toggling and motor control
+    private final Button handToggleButton;
+    private final Button servoArmToggleButton; // Now mapped to the square button
+
+    // States for toggling
+    private boolean isHandOpen = true; // Default state for hand is open
+    private boolean isServoArmUp = false;
+
+    // Constructor
     public RobotArm(HardwareMap hardwareMap, Gamepad gamepad, Telemetry telemetry) {
-        motorArmLeft = hardwareMap.get(DcMotor.class, "motorArmLeft");
-        motorArmRight = hardwareMap.get(DcMotor.class, "motorArmRight");
-        servoArm = hardwareMap.get(Servo.class, "servoArm");
+        // Initialize hardware components
+        motorArm = hardwareMap.get(DcMotor.class, "motorArm");
+        motorJoint = hardwareMap.get(DcMotor.class, "motorJoint");
         servoHand = hardwareMap.get(Servo.class, "servoHand");
 
         this.gamepad = gamepad;
         this.telemetry = telemetry;
 
+        // Initialize controller inputs and buttons
         controllerInput = new ControllerInputHandler(gamepad);
-        motorArmUpButton = new Button("leftbumper", false);
-        motorArmDownButton = new Button("rightbumper", false);
-        servoArmUpButton = new Button("lefttrigger", false);
-        servoArmDownButton = new Button("righttrigger", false);
-        handToggleButton = new Button("circle", false);
+        servoArmToggleButton = new Button("square", false);
+        handToggleButton = new Button("rightbumper", false);
 
-        motorArmLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        motorArmRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-
-
+        // Configure motors and servos
         initialiseMotors();
-        handAngle = 0;
-        servoArmAngle = SERVO_ARM_DOWN;
     }
 
     private void initialiseMotors() {
-        motorArmLeft.setDirection(DcMotorSimple.Direction.FORWARD);
-        motorArmRight.setDirection(DcMotorSimple.Direction.FORWARD);
-        motorArmLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        motorArmRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        motorArmLeft.setPower(MOTOR_ARM_POWER);
-        motorArmRight.setPower(MOTOR_ARM_POWER);
+        motorArm.setDirection(DcMotorSimple.Direction.FORWARD);
+        motorArm.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
-        servoArm.setDirection(Servo.Direction.FORWARD);
-        servoHand.setDirection(Servo.Direction.FORWARD);
-        servoHand.setPosition(SERVO_HAND_CLOSED);
-        servoArm.setPosition(SERVO_ARM_DOWN);
+        motorJoint.setDirection(DcMotorSimple.Direction.FORWARD);
+        motorJoint.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+
+        servoHand.setPosition(SERVO_HAND_CLOSED); // Default hand state
     }
 
-    public void openHand() {servoHand.setPosition(SERVO_HAND_OPEN);}
-    public void closeHand() {servoHand.setPosition(SERVO_HAND_CLOSED);}
+    private void toggleServoArm() {
+        if (controllerInput.updateButton(servoArmToggleButton)) {
+            isServoArmUp = !isServoArmUp;
+            telemetry.addData("Arm Position", isServoArmUp ? "Up" : "Down");
+        }
+    }
 
+    private void toggleServoHand() {
+        if (controllerInput.updateButton(handToggleButton)) {
+            isHandOpen = !isHandOpen;
+            servoHand.setPosition(isHandOpen ? SERVO_HAND_OPEN : SERVO_HAND_CLOSED);
+            telemetry.addData("Hand State", isHandOpen ? "Open" : "Closed");
+        }
+    }
 
-    public void moveArmBoard() {
-        servoArm.setPosition(SERVO_ARM_BOARD);
-        motorArmLeft.setTargetPosition(MOTOR_ARM_BOARD);
-        motorArmRight.setTargetPosition(MOTOR_ARM_BOARD);
+    private void controlMotorJoint() {
+        // Check which bumper is pressed and set the motor power accordingly
+        if (gamepad.right_bumper) {
+            motorJoint.setPower(JOINT_POWER); // Forward power
+        } else if (gamepad.left_bumper) {
+            motorJoint.setPower(-JOINT_POWER); // Reverse power
+        } else {
+            motorJoint.setPower(0); // Stop the motor when neither bumper is pressed
+        }
     }
 
     public void doArmMovement() {
-        // update arm buttons
-        controllerInput.updateButton(motorArmUpButton);
-        controllerInput.updateButton(motorArmDownButton);
+        // Update toggles
+        toggleServoHand();
+        toggleServoArm();
 
-        // hand buttons
-        if (controllerInput.updateButton(handToggleButton)) {
-            servoHand.setPosition(handToggleButton.onMode ? SERVO_HAND_OPEN : SERVO_HAND_CLOSED);
-        }
+        // Control motorJoint
+        controlMotorJoint();
 
-        // servo arm buttons
-        if (controllerInput.updateButton(servoArmUpButton)) {
-            servoArmAngle += SERVO_ARM_ANGLE_INCREMENT;
-            servoArm.setPosition(servoArmAngle);
-            telemetry.addData("arm going up", "");
-        }
-        if (controllerInput.updateButton(servoArmDownButton)) {
-            servoArmAngle -= SERVO_ARM_ANGLE_INCREMENT;
-            if (servoArmAngle < 0) servoArmAngle = 0;   // set limit at position 0
-            servoArm.setPosition(servoArmAngle);
-            telemetry.addData("arm going down", "");
-        }
+        // Calculate motor power for motorArm
+        double power = (gamepad.right_trigger - gamepad.left_trigger) * MOTOR_ARM_SCALING;
+        motorArm.setPower(power);
 
-        motorArmLeft.setPower(motorArmUpButton.isPressed ? MOTOR_ARM_POWER : (motorArmDownButton.isPressed ? -MOTOR_ARM_POWER : 0));
-        motorArmRight.setPower(motorArmUpButton.isPressed ? MOTOR_ARM_POWER : (motorArmDownButton.isPressed ? -MOTOR_ARM_POWER : 0));
+        // Telemetry feedback
+        telemetry.addData("Motor Power", power);
+        telemetry.addData("Left Trigger", gamepad.left_trigger);
+        telemetry.addData("Right Trigger", gamepad.right_trigger);
+        telemetry.addData("Hand State", isHandOpen ? "Open" : "Closed");
+        telemetry.addData("Arm Position", isServoArmUp ? "Up" : "Down");
+        telemetry.update();
     }
 }
-
-

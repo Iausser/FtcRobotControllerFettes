@@ -17,10 +17,9 @@ import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 
 public class RobotMove {
     private final DcMotor motorA, motorB, motorC, motorD;
-    private Servo servoDrone;
     private static final double MAX_AVAILABLE_POWER = 0.98;   // 2% reduction in max power
-    private static final double MAX_MOTOR_POWER = 0.9 * MAX_AVAILABLE_POWER;   // don't use all available power (too sensitive)
-    private static final double TURN_SCALAR = 0.6;    // turning scalar (can be adjusted)
+    private static final double MAX_MOTOR_POWER = 0.5 * MAX_AVAILABLE_POWER;   // don't use all available power (too sensitive)
+    private static final double TURN_SCALAR = 0.2;    // turning scalar (can be adjusted)
     private BHI260IMU bhi260; // Using the BHI260IMU sensor on the control hub
     private Orientation defaultOrientation;
     private ControllerInputHandler controllerInput;
@@ -31,6 +30,20 @@ public class RobotMove {
     private boolean isTurning;
     private static final double AUTO_CORRECT_SENSITIVITY = 3.0;
     private static final double TWO_PI = 2 * Math.PI;
+
+    public void move(double y, double x) {
+        // Use the y and x joystick values to set motor power accordingly
+        double motorPowerA = y + x;
+        double motorPowerB = y - x;
+        double motorPowerC = y + x;
+        double motorPowerD = y - x;
+
+        // Set power to motors
+        motorA.setPower(motorPowerA);
+        motorB.setPower(motorPowerB);
+        motorC.setPower(motorPowerC);
+        motorD.setPower(motorPowerD);
+    }
 
     public RobotMove(HardwareMap hardwareMap, Gamepad gamepad, Telemetry telemetry) {
         motorA = hardwareMap.get(DcMotor.class, "motorA");
@@ -113,55 +126,42 @@ public class RobotMove {
         return angle;
     }
 
-    // sets the motors to move orthogonally at some angle and power value while turning with speed turn_value
     public void robotCentricMovement(double x, double y, double offset_angle, double turn_value) {
-        double theta = xy_to_angle(x, y) - offset_angle;
-        double power = Math.sqrt(x*x + y*y);
+        double speedMultiplier = controllerInput.getSpeedMultiplier(); // Retain speed scaling for movement
 
-        double sin = Math.sin(theta - Math.PI/4);
-        double cos = Math.cos(theta - Math.PI/4);
+        // Calculate translational movement power and direction
+        double theta = xy_to_angle(x, y) - offset_angle;
+
+        // Apply logarithmic scaling to power
+        double rawPower = Math.sqrt(x * x + y * y); // Original linear magnitude
+        double power = Math.signum(rawPower) * (Math.log(1 + Math.abs(rawPower)) / Math.log(2)) * speedMultiplier;
+
+        double sin = Math.sin(theta - Math.PI / 4);
+        double cos = Math.cos(theta - Math.PI / 4);
         double max = Math.max(Math.abs(sin), Math.abs(cos));
 
-        // orthogonal movement (normalised sin and cos to make use of all available power)
-        // multiply by MAX_MOTOR_POWER to account for any variation in motor strength (2% assumed) + sensitivity
-        double speed_a = power * cos/max * MAX_MOTOR_POWER;
-        double speed_b = power * sin/max * MAX_MOTOR_POWER;
-        double speed_c = power * sin/max * MAX_MOTOR_POWER;
-        double speed_d = power * cos/max * MAX_MOTOR_POWER;
+        double translational_a = power * cos / max * MAX_MOTOR_POWER;
+        double translational_b = power * sin / max * MAX_MOTOR_POWER;
+        double translational_c = power * sin / max * MAX_MOTOR_POWER;
+        double translational_d = power * cos / max * MAX_MOTOR_POWER;
 
-        // add auto-correct turning
-        // there is some error occurring here
-        // robot keeps turning for some reason after turn_value is set to zero
-        // perhaps the auto-correct orientation isn't being set when it should be
-        if (isTurning && turn_value == 0) {
-            autoCorrectOrientation = getIMUOrientation();
-        }
-        isTurning = turn_value != 0;
+        // Decouple turning power
+        double turnPower = TURN_SCALAR * Math.signum(turn_value); // Constant turning power
 
-        if (isTurning == false) {
-            // get orientation of the robot relative to its movement direction using IMU
-            Orientation currentOrientation = getIMUOrientation();
-            double deltaAngle = currentOrientation.firstAngle - autoCorrectOrientation.firstAngle;
+        // Combine translational and turning components
+        double speed_a = translational_a + turnPower;
+        double speed_b = translational_b - turnPower;
+        double speed_c = translational_c + turnPower;
+        double speed_d = translational_d - turnPower;
 
-            // auto adjust for being off using turning
-            turn_value = angleToRange(deltaAngle) * AUTO_CORRECT_SENSITIVITY;
-        }
+        // Normalize motor powers to prevent exceeding the maximum power
+        double maxPower = Math.max(1.0, Math.max(Math.abs(speed_a), Math.max(Math.abs(speed_b), Math.max(Math.abs(speed_c), Math.abs(speed_d)))));
+        speed_a /= maxPower;
+        speed_b /= maxPower;
+        speed_c /= maxPower;
+        speed_d /= maxPower;
 
-        // add turning
-        speed_a += turn_value * TURN_SCALAR;
-        speed_b -= turn_value * TURN_SCALAR;
-        speed_c += turn_value * TURN_SCALAR;
-        speed_d -= turn_value * TURN_SCALAR;
-
-        // account for any power overshooting
-        if ((power * MAX_MOTOR_POWER + Math.abs(turn_value)) > MAX_MOTOR_POWER) {
-            speed_a /= (power + Math.abs(turn_value));
-            speed_b /= (power + Math.abs(turn_value));
-            speed_c /= (power + Math.abs(turn_value));
-            speed_d /= (power + Math.abs(turn_value));
-        }
-
-        // set motor speeds
+        // Set motor powers
         motorA.setPower(speed_a);
         motorB.setPower(speed_b);
         motorC.setPower(speed_c);
@@ -170,7 +170,6 @@ public class RobotMove {
 
     // the same as robot centric movement except controls work relative to the field instead of the robot
     public void fieldCentricMovement(double x, double y, double turn_value) {
-        // get orientation of the robot relative to the field using IMU
         Orientation currentOrientation = getIMUOrientation();
         double deltaAngle = currentOrientation.firstAngle - defaultOrientation.firstAngle;
 
@@ -192,7 +191,15 @@ public class RobotMove {
         double leftStickY = controllerInput.getLeftStickY();    // also negate the sign
         double rightStickX = controllerInput.getRightStickX();
 
-        if (fieldCentricMovement.onMode) {
+        double deadZone = 0.1;
+        if (Math.abs(leftStickX) < deadZone) {
+            leftStickX = 0;
+        }
+        if (Math.abs(leftStickY) < deadZone) {
+            leftStickY = 0;
+        }
+
+        if (fieldCentricMovement.isOn()) {
             fieldCentricMovement(leftStickX, leftStickY, rightStickX);
         } else {
             robotCentricMovement(leftStickX, leftStickY, 0, rightStickX);
