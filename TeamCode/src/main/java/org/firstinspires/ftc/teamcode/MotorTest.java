@@ -13,17 +13,15 @@ public class MotorTest extends OpMode {
 
     private RobotMove robotMove;
     private ControllerInputHandler controllerInput;
-    private ServoControl servoControl;
     private static final double MOTOR_POWER = 0.2; // Define MOTOR_POWER
 
     @Override
     public void init() {
         controllerInput = new ControllerInputHandler(gamepad1);
         robotMove = new RobotMove(hardwareMap, gamepad1, telemetry);
-        servoControl = new ServoControl(hardwareMap, gamepad1, telemetry);
 
         // Reset the IMU's default orientation
-        robotMove.setDefaultOrientation();
+        //robotMove.setDefaultOrientation();
     }
 
     @Override
@@ -48,12 +46,12 @@ public class MotorTest extends OpMode {
         }
 
         // Servo control logic
-        servoControl.update();
+        //servoControl.update();
 
         telemetry.update();
     }
 
-    public class RobotMove {
+    /*public class RobotMove {
         private final DcMotor motorA, motorB, motorC, motorD;
         private final Gamepad gamepad;
         private final Telemetry telemetry;
@@ -135,5 +133,5 @@ public class MotorTest extends OpMode {
                 telemetry.addData("Servo", "Moved to position 0.0");
             }
         }
-    }
+    }*/
 }

@@ -3,47 +3,24 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.robotcore.hardware.Gamepad;
 
 public class ControllerInputHandler {
-    private Gamepad gamepad;
-    private boolean isFineMovement = false;  // Toggle flag for fine movement mode
-    private double speedMultiplier = 1.0;    // Default to full speed
-    private boolean previousLeftStickButton = false;  // Track left stick button state
+    private final Gamepad gamepad;
 
     public ControllerInputHandler(Gamepad gamepad) {
         this.gamepad = gamepad;
     }
 
-    // Toggle fine movement mode
-    private void toggleFineMovement() {
-        isFineMovement = !isFineMovement;
-        speedMultiplier = isFineMovement ? 0.5 : 1.0;  // Adjust speed multiplier for fine movement
-    }
-
-    public double getSpeedMultiplier() {
-        return speedMultiplier;
-    }
-
     public boolean updateButton(Button button) {
-        boolean currentState = isButtonPressed(button.getName());
+        boolean hasToggled = false;
+        boolean pressed = isButtonPressed(button.buttonType);
 
-        // Only toggle if the button state has changed from not pressed to pressed
-        if (currentState && !button.isPressed()) {
+        if (!button.isPressed && pressed) {
+            // toggle mode
             button.toggle();
-            return true;  // Return true to indicate the button was toggled
+            hasToggled = true;
         }
 
-        button.setPressed(currentState);  // Update the button's current state
-        return false;  // Return false if there was no toggle
-    }
-
-    public void handleJoystickInput(RobotMove robotDrive) {
-        // Toggle fine movement mode only on state change of left stick button
-        if (gamepad.left_stick_button && !previousLeftStickButton) {
-            toggleFineMovement();
-        }
-        previousLeftStickButton = gamepad.left_stick_button;
-
-        // Call the doRobotMovement method in RobotMove to handle joystick input
-        robotDrive.doRobotMovement();
+        button.isPressed = pressed;
+        return hasToggled;
     }
 
     // Buttons
@@ -90,7 +67,7 @@ public class ControllerInputHandler {
     }
 
     public float getLeftStickY() {
-        return -gamepad.left_stick_y;
+        return gamepad.left_stick_y;
     }
 
     public float getRightStickX() {
@@ -98,7 +75,7 @@ public class ControllerInputHandler {
     }
 
     public float getRightStickY() {
-        return -gamepad.right_stick_y;
+        return gamepad.right_stick_y;
     }
 
     public float leftTrigger() {
