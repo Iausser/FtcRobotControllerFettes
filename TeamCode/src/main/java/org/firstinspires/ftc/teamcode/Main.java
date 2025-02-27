@@ -31,7 +31,7 @@ public class Main extends OpMode {
             telemetry.addData("Right Stick X", controllerInput.getRightStickX());
 
             robotMove.doRobotMovement();
-            robotArm.doArmMovement(); // Execute arm movement logic
+            //robotArm.doArmMovement(); // Execute arm movement logic
             feedbackPositions();
         }
         telemetry.update();

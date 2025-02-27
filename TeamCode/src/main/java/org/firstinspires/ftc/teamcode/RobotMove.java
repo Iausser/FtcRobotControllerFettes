@@ -19,8 +19,8 @@ public class RobotMove {
     private final DcMotor motorA, motorB, motorC, motorD;
     private Servo servoDrone;
     private static final double MAX_AVAILABLE_POWER = 0.98;   // 2% reduction in max power
-    private static final double MAX_MOTOR_POWER = 0.65 * MAX_AVAILABLE_POWER;   // don't use all available power (too sensitive)
-    private static final double TURN_SCALAR = 0.6;    // turning scalar (can be adjusted)
+    private static final double MAX_MOTOR_POWER = 0.8 * MAX_AVAILABLE_POWER;   // don't use all available power (too sensitive)
+    private static final double TURN_SCALAR = 0.8;    // turning scalar (can be adjusted)
     private BHI260IMU bhi260; // Using the BHI260IMU sensor on the control hub
     private Orientation defaultOrientation;
     private ControllerInputHandler controllerInput;
@@ -28,7 +28,7 @@ public class RobotMove {
     public Button robotCentricMovement, fieldCentricMovement, orientationButton;
     public Orientation autoCorrectOrientation;
     private boolean isTurning;
-    private static final double AUTO_CORRECT_SENSITIVITY = 3.0;
+    private static final double AUTO_CORRECT_SENSITIVITY = 2.0;
     private static final double TWO_PI = 2 * Math.PI;
 
     public RobotMove(HardwareMap hardwareMap, Gamepad gamepad, Telemetry telemetry) {
@@ -115,30 +115,47 @@ public class RobotMove {
     public void robotCentricMovement(double x, double y, double offset_angle, double turn_value) {
         double theta = xy_to_angle(x, y) - offset_angle;
         double radius = Math.sqrt(x*x + y*y);  // Apply the speed multiplier
-        double power = radius * MAX_MOTOR_POWER;
+        double power = radius * MAX_MOTOR_POWER;    // account for any variation in motor strength (2% assumed) + sensitivity
 
         double sin = Math.sin(theta - Math.PI / 4);
         double cos = Math.cos(theta - Math.PI / 4);
         double max = Math.max(Math.abs(sin), Math.abs(cos));
 
-        // Calculate the motor speeds, applying the speed multiplier
+        // orthogonal movement (normalised sin ans cos to make use of all available power)
         double speed_a = power * cos / max;
         double speed_b = power * sin / max;
         double speed_c = power * sin / max;
         double speed_d = power * cos / max;
 
-        // Apply turning using the turn value
+        // add auto-correct turning
+        if (isTurning && turn_value == 0) {
+            autoCorrectOrientation = getIMUOrientation();
+        }
+        isTurning = turn_value != 0;
+
+        if (isTurning == false) {
+            // get orientation of the robot relative to its movement direction using IMU
+            Orientation currentOrientation = getIMUOrientation();
+            double deltaAngle = autoCorrectOrientation.firstAngle - currentOrientation.firstAngle;
+
+            // auto adjust for being off using turning
+            turn_value = angleToRange(deltaAngle) * AUTO_CORRECT_SENSITIVITY;
+        }
+
+        // Add turning
         double turn_power = turn_value * TURN_SCALAR;
         speed_a += turn_power;
         speed_b -= turn_power;
         speed_c += turn_power;
         speed_d -= turn_power;
 
-        // Prevent power overshooting
-        speed_a *= MAX_MOTOR_POWER / (1 + Math.abs(turn_power));
-        speed_b *= MAX_MOTOR_POWER / (1 + Math.abs(turn_power));
-        speed_c *= MAX_MOTOR_POWER / (1 + Math.abs(turn_power));
-        speed_d *= MAX_MOTOR_POWER / (1 + Math.abs(turn_power));
+        // Account for any power overshooting
+        if ((power + Math.abs(turn_power)) > MAX_MOTOR_POWER) {
+            speed_a /= (power + Math.abs(turn_power));
+            speed_b /= (power + Math.abs(turn_power));
+            speed_c /= (power + Math.abs(turn_power));
+            speed_d /= (power + Math.abs(turn_power));
+        }
 
         // Set the motor powers
         motorA.setPower(speed_a);
@@ -166,9 +183,9 @@ public class RobotMove {
     }
 
     public void doRobotMovement() {
-        double leftStickX = controllerInput.getLeftStickX();
+        double leftStickX = -controllerInput.getLeftStickX();
         double leftStickY = controllerInput.getLeftStickY();
-        double rightStickX = controllerInput.getRightStickX();
+        double rightStickX = -controllerInput.getRightStickX();
 
         if (fieldCentricMovement.isOn()) {
             fieldCentricMovement(leftStickX, leftStickY, rightStickX);
