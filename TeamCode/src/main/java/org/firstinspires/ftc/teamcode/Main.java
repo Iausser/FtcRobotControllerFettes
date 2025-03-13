@@ -7,14 +7,14 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 public class Main extends OpMode {
     private ControllerInputHandler controllerInput;
     private RobotMove robotMove;
-    private RobotArm robotArm;
+    private RobotExtras robotExtras;
     private SettingsManager settings;
 
     @Override
     public void init() {
         controllerInput = new ControllerInputHandler(gamepad1);
         robotMove = new RobotMove(hardwareMap, gamepad1, telemetry);
-        robotArm = new RobotArm(hardwareMap, gamepad1, telemetry);
+        robotExtras = new RobotExtras(hardwareMap, gamepad1, telemetry);
         settings = new SettingsManager(gamepad1, robotMove, telemetry);
     }
 
@@ -22,8 +22,10 @@ public class Main extends OpMode {
     public void loop() {
         manageButtons();
         if (settings.settingsButton.onMode) {
-            telemetry.addData("Settings Mode Active", "Stopping robot movement");
+            telemetry.clearAll();
+            telemetry.addData("Settings Mode Active", "Stopping robot movement\n");
             robotMove.robotCentricMovement(0, 0, 0, 0); // Ensure all motors are stopped
+            settings.printSettings();
             settings.doSettings();
         } else {
             telemetry.addData("Left Stick X", controllerInput.getLeftStickX());
@@ -31,7 +33,7 @@ public class Main extends OpMode {
             telemetry.addData("Right Stick X", controllerInput.getRightStickX());
 
             robotMove.doRobotMovement();
-            //robotArm.doArmMovement(); // Execute arm movement logic
+            robotExtras.doHardwareMovement();  // Execute pulley, arm and hand movement logic
             feedbackPositions();
         }
         telemetry.update();
