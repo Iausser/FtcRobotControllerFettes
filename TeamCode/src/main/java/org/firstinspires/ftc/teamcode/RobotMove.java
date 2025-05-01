@@ -1,3 +1,4 @@
+// CODE FOR BASIC ROBOT NAVIGATION
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.hardware.bosch.BHI260IMU;
@@ -76,7 +77,7 @@ public class RobotMove {
         );
     }
 
-    // gives power to any wheel motor
+    // motor strength
     public void setPower(char motor, double power) {
         switch (motor) {
             case 'A':
@@ -94,6 +95,7 @@ public class RobotMove {
         }
     }
 
+    // joystick gives coordinate
     // converts joystick coords to an angle
     private double xy_to_angle(double x, double y) {
         if (x >= 0 && y == 0) return 0.0;

@@ -1,3 +1,4 @@
+// methods to use in the autonomous phase
 package org.firstinspires.ftc.teamcode;
 
 public class RobotProcesses {
@@ -50,6 +51,7 @@ public class RobotProcesses {
         }
     }
 
+    // abandoned arm movement
     /*public void setArmDown() {
         robotExtras.motorArmLeft.setTargetPosition(-162);
         robotExttas.motorArmRight.setTargetPosition(-90);
