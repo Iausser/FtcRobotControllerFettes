@@ -16,20 +16,20 @@ import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 
-public class RobotMove {
-    private final DcMotor motorA, motorB, motorC, motorD;
-    private static final double MAX_AVAILABLE_POWER = 0.98;   // 2% reduction in max power
-    private static final double MAX_MOTOR_POWER = 0.8 * MAX_AVAILABLE_POWER;   // don't use all available power (too sensitive)
-    private static final double TURN_SCALAR = 0.8;    // turning scalar (can be adjusted)
-    private BHI260IMU bhi260; // Using the BHI260IMU sensor on the control hub
-    private Orientation defaultOrientation;
-    private ControllerInputHandler controllerInput;
-    public Telemetry telemetry;
-    public Button robotCentricMovement, fieldCentricMovement, orientationButton;
-    public Orientation autoCorrectOrientation;
-    private boolean isTurning;
-    private static final double AUTO_CORRECT_SENSITIVITY = 1.0;
-    private static final double TWO_PI = 2 * Math.PI;
+//public class RobotMove {
+//    private final DcMotor motorA, motorB, motorC, motorD;
+//    private static final double MAX_AVAILABLE_POWER = 0.98;   // 2% reduction in max power
+//    private static final double MAX_MOTOR_POWER = 0.8 * MAX_AVAILABLE_POWER;   // don't use all available power (too sensitive)
+//    private static final double TURN_SCALAR = 0.8;    // turning scalar (can be adjusted)
+//    private BHI260IMU bhi260; // Using the BHI260IMU sensor on the control hub
+//    private Orientation defaultOrientation;
+//    private ControllerInputHandler controllerInput;
+//    public Telemetry telemetry;
+//    public Button robotCentricMovement, fieldCentricMovement, orientationButton;
+//    public Orientation autoCorrectOrientation;
+//    private boolean isTurning;
+//    private static final double AUTO_CORRECT_SENSITIVITY = 1.0;
+//    private static final double TWO_PI = 2 * Math.PI;PI
 
     public RobotMove(HardwareMap hardwareMap, Gamepad gamepad, Telemetry telemetry) {
         motorA = hardwareMap.get(DcMotor.class, "motorA");
