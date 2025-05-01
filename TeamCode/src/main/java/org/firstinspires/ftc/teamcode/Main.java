@@ -22,35 +22,34 @@ public class Main extends OpMode {
     public void loop() {
         manageButtons();
         if (settings.settingsButton.onMode) {
-            telemetry.clearAll();
-            telemetry.addData("Settings Mode Active", "Stopping robot movement\n");
+            // in settings mode
+            telemetry.addData("\nSettings Mode Active", "Stopping robot movement\n");
             robotMove.robotCentricMovement(0, 0, 0, 0); // Ensure all motors are stopped
-            settings.printSettings();
             settings.doSettings();
         } else {
-            telemetry.addData("Left Stick X", controllerInput.getLeftStickX());
-            telemetry.addData("Left Stick Y", controllerInput.getLeftStickY());
-            telemetry.addData("Right Stick X", controllerInput.getRightStickX());
-
+            // in movement mode
             robotMove.doRobotMovement();
             robotExtras.doHardwareMovement();  // Execute pulley, arm and hand movement logic
-            feedbackPositions();
+            telemetry.clearAll();
+            feedbackValues();
         }
         telemetry.update();
     }
 
-    private void feedbackPositions() {
+    private void feedbackValues() {
+        telemetry.addData("Left Stick X", controllerInput.getLeftStickX());
+        telemetry.addData("Left Stick Y", controllerInput.getLeftStickY());
+        telemetry.addData("Right Stick X", controllerInput.getRightStickX());
+
         telemetry.addData("\nIMU orientation:", robotMove.getIMUOrientation().firstAngle);
         telemetry.addData("Auto correct orientation:", robotMove.autoCorrectOrientation.firstAngle);
+
+        telemetry.addData("\nHand angle:", robotExtras.getHandAngle());
     }
 
     private void manageButtons() {
-        if (controllerInput.updateButton(settings.settingsButton)) {
-            if (settings.settingsButton.onMode) {
-                settings.printSettings();
-            } else {
-                telemetry.clearAll();
-            }
+        if (controllerInput.updateButton(settings.settingsButton) && settings.settingsButton.onMode) {
+            settings.printSettings();
         }
     }
 }

@@ -15,7 +15,7 @@ public class RobotExtras {
     private ControllerInputHandler controllerInput;
     private static final double MOTOR_ARM_POWER = 0.8;
     private static final double MOTOR_PULLEY_POWER = 0.95;
-    private static final double SERVO_HAND_ANGLE_INCREMENT = 0.030;
+    private static final double SERVO_HAND_ANGLE_INCREMENT = 0.15;
     private Telemetry telemetry;
     public Button pulleyUpButton, pulleyDownButton, servoHandOpenButton, servoHandCloseButton;
     public double servoHandAngle;
@@ -46,6 +46,7 @@ public class RobotExtras {
         motorArm.setDirection(DcMotorSimple.Direction.FORWARD);
 
         servoHand.setDirection(Servo.Direction.FORWARD);
+        servoHand.setPosition(servoHandAngle);
     }
 
     public void openHand() {
@@ -75,9 +76,18 @@ public class RobotExtras {
         // motor arm triggers
         double leftTrigger = controllerInput.leftTrigger();
         double rightTrigger = controllerInput.rightTrigger();
-        motorArm.setPower((leftTrigger - rightTrigger) * MOTOR_ARM_POWER);
+        //motorArm.setPower((leftTrigger - rightTrigger) * MOTOR_ARM_POWER);
+
+        // use cubic scaling
+        double x = (leftTrigger - rightTrigger);
+        motorArm.setPower(Math.pow(x, 3) * MOTOR_ARM_POWER);
+
 
         // motor pulley
         motorPulley.setPower(pulleyUpButton.isPressed ? MOTOR_PULLEY_POWER : (pulleyDownButton.isPressed ? -MOTOR_PULLEY_POWER : 0));
+    }
+
+    public double getHandAngle() {
+        return servoHandAngle;
     }
 }

@@ -24,7 +24,7 @@ public class Auto extends OpMode {
         return;
     }
 
-    private void doAutonomousMode() {
-        robotProcesses.moveRobotTime(0, 1, 1);
+    private void doAutonomousMode(){
+        robotProcesses.moveRobotTime(-1, 0, 0.3);
     }
 }

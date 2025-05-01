@@ -17,7 +17,6 @@ import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 
 public class RobotMove {
     private final DcMotor motorA, motorB, motorC, motorD;
-    private Servo servoDrone;
     private static final double MAX_AVAILABLE_POWER = 0.98;   // 2% reduction in max power
     private static final double MAX_MOTOR_POWER = 0.8 * MAX_AVAILABLE_POWER;   // don't use all available power (too sensitive)
     private static final double TURN_SCALAR = 0.8;    // turning scalar (can be adjusted)
@@ -28,7 +27,7 @@ public class RobotMove {
     public Button robotCentricMovement, fieldCentricMovement, orientationButton;
     public Orientation autoCorrectOrientation;
     private boolean isTurning;
-    private static final double AUTO_CORRECT_SENSITIVITY = 2.0;
+    private static final double AUTO_CORRECT_SENSITIVITY = 1.0;
     private static final double TWO_PI = 2 * Math.PI;
 
     public RobotMove(HardwareMap hardwareMap, Gamepad gamepad, Telemetry telemetry) {
@@ -106,8 +105,16 @@ public class RobotMove {
 
     // take an angle in radians and translate to the range (-pi, pi)
     public double angleToRange(double angle) {
-        angle %= (Math.PI * 2);
-        if (angle >= Math.PI) angle -= Math.PI * 2;
+        // get angle to range
+        int sign = (angle < 0) ? -1 : 1;
+        angle = (Math.abs(angle) + Math.PI) % TWO_PI - Math.PI;
+        angle *= sign;
+
+        // add fail safe
+        double epsilon = 0.00001;
+        angle = Math.min(angle, Math.PI - epsilon);
+        angle = Math.max(angle, -Math.PI + epsilon);
+
         return angle;
     }
 
@@ -127,20 +134,23 @@ public class RobotMove {
         double speed_c = power * sin / max;
         double speed_d = power * cos / max;
 
-        // add auto-correct turning
-        if (isTurning && turn_value == 0) {
-            autoCorrectOrientation = getIMUOrientation();
-        }
-        isTurning = turn_value != 0;
-
-        if (isTurning == false) {
-            // get orientation of the robot relative to its movement direction using IMU
-            Orientation currentOrientation = getIMUOrientation();
-            double deltaAngle = autoCorrectOrientation.firstAngle - currentOrientation.firstAngle;
-
-            // auto adjust for being off using turning
-            turn_value = angleToRange(deltaAngle) * AUTO_CORRECT_SENSITIVITY;
-        }
+//        // add auto-correct turning
+//        if (isTurning && turn_value == 0) {
+//            autoCorrectOrientation = getIMUOrientation();
+//        }
+//        isTurning = turn_value != 0;
+//
+//        if (!isTurning) {
+//            // get orientation of the robot relative to its movement direction using IMU
+//            Orientation currentOrientation = getIMUOrientation();
+//            double deltaAngle = angleToRange(autoCorrectOrientation.firstAngle - currentOrientation.firstAngle);
+//            // auto adjust for being off using turning
+//            if (Math.abs(deltaAngle) > 0.05) {
+//                turn_value = deltaAngle * AUTO_CORRECT_SENSITIVITY;
+//            } else {
+//                turn_value = 0;
+//            }
+//        }
 
         // Add turning
         double turn_power = turn_value * TURN_SCALAR;

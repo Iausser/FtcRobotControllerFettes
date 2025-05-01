@@ -1,7 +1,7 @@
 package org.firstinspires.ftc.teamcode;
 
 public class RobotProcesses {
-    private RobotMove robotMove;
+    private static RobotMove robotMove;
     private RobotExtras robotExtras;
 
     public RobotProcesses(RobotMove robotMove, RobotExtras robotExtras) {
@@ -9,7 +9,7 @@ public class RobotProcesses {
         this.robotExtras = robotExtras;
     }
 
-    public void moveRobotTime(double x, double y, double seconds) {
+    public static void moveRobotTime(double x, double y, double seconds) {
 
         long totalTime = (long) (1000 * seconds);
         long startTime = System.currentTimeMillis();
@@ -30,7 +30,7 @@ public class RobotProcesses {
         robotMove.robotCentricMovement(0, 0, 0, 0);
     }
 
-    public void turnToOrientation(double targetAngle, double duration) {
+    public static void turnToOrientation(double targetAngle, double duration) {
         long totalTime = (long) (1000 * duration);
         long startTime = System.currentTimeMillis();
         boolean finished = false;
